@@ -3,53 +3,54 @@ import cors from "cors";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-// CONFIGURAÇÃO DO MERCADO PAGO
+// CONFIG MERCADO PAGO SDK
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// ROTA PARA CRIAR PREFERENCE
+// ROTA TESTE
+app.get("/", (req, res) => {
+    res.send("Backend da Shoopee20 OK!");
+});
+
+// ROTA DE PAGAMENTO
 app.post("/create-preference", async (req, res) => {
     try {
-        const body = req.body;
+        console.log("REQ:", req.body);
 
         const preference = new Preference(client);
 
         const result = await preference.create({
             body: {
-                items: [
-                    {
-                        title: body.title,
-                        quantity: 1,
-                        currency_id: "BRL",
-                        unit_price: Number(body.price)
-                    }
-                ],
+                items: req.body.items.map(item => ({
+                    title: item.name,
+                    quantity: item.qty,
+                    unit_price: Number(item.price),
+                    currency_id: "BRL"
+                })),
+                auto_return: "approved",
                 back_urls: {
-                    success: "https://seusite.com/sucesso",
-                    failure: "https://seusite.com/erro",
-                    pending: "https://seusite.com/pendente"
-                },
-                auto_return: "approved"
+                    success: "https://shoopee20.vercel.app/sucesso.html",
+                    failure: "https://shoopee20.vercel.app/erro.html",
+                    pending: "https://shoopee20.vercel.app/pendente.html"
+                }
             }
         });
 
-        res.json({ id: result.id });
+        console.log("RESULT:", result);
+
+        return res.json({ init_point: result.init_point });
+
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Erro ao criar preference" });
+        console.error("Erro Mercado Pago:", error);
+        return res.status(500).json({ error: "Erro interno ao gerar pagamento" });
     }
 });
 
-app.get("/", (req, res) => {
-    res.send("Backend da Shoopee20 Online");
-});
-
-// PORT PARA RENDER
+// PORTA
 app.listen(process.env.PORT || 3000, () => {
     console.log("Servidor rodando");
 });
