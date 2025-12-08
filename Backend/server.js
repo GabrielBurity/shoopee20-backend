@@ -26,9 +26,9 @@ app.post("/create-preference", async (req, res) => {
             items: mpItems,
             auto_return: "approved",
             back_urls: {
-                success: "https://seusite.com/sucesso",
-                failure: "https://seusite.com/erro",
-                pending: "https://seusite.com/pendente"
+                success: "http://localhost:3000/create-preference",
+                failure: "http://localhost:3000/create-preference",
+                pending: "http://localhost:3000/create-preference"
             }
         };
 
@@ -51,3 +51,4 @@ app.get("/", (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
     console.log("Servidor rodando");
 });
+
