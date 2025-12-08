@@ -1,28 +1,23 @@
 import express from "express";
 import cors from "cors";
-import MercadoPago from "mercadopago";
+import mercadopago from "mercadopago";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Inicializar SDK da forma nova
-const client = new MercadoPago.MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN
-});
+// CONFIG MPL
+mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
-// Import preferências com client configurado
-const preferenceClient = new MercadoPago.Preference(client);
-
-// Teste
+// rota teste
 app.get("/", (req, res) => {
-    res.send("Backend da Shoopee20 Online ✓");
+    res.send("Backend Shoopee20 Funcionando ✓");
 });
 
-// ROTA DE PAGAMENTO
+// rota para criar pagamento
 app.post("/create-preference", async (req, res) => {
     try {
-        console.log("Recebendo pedido:", req.body);
+        console.log("Items recebidos:", req.body);
 
         const { items } = req.body;
 
@@ -30,15 +25,13 @@ app.post("/create-preference", async (req, res) => {
             return res.status(400).json({ error: "Formato inválido" });
         }
 
-        const mpItems = items.map(item => ({
-            title: item.name,
-            unit_price: Number(item.price),
-            quantity: Number(item.qty),
-            currency_id: "BRL"
-        }));
-
         const preference = {
-            items: mpItems,
+            items: items.map(item => ({
+                title: item.name,
+                quantity: Number(item.qty),
+                unit_price: Number(item.price),
+                currency_id: "BRL"
+            })),
             auto_return: "approved",
             back_urls: {
                 success: "https://shoopee20.vercel.app/sucesso.html",
@@ -47,21 +40,19 @@ app.post("/create-preference", async (req, res) => {
             }
         };
 
-        const result = await preferenceClient.create({
-            body: preference
-        });
+        const result = await mercadopago.preferences.create(preference);
 
-        console.log("Preferência criada!", result);
+        console.log("Preferência criada:", result.body.init_point);
 
-        return res.json({ init_point: result.init_point });
+        return res.json({ init_point: result.body.init_point });
 
-    } catch (error) {
-        console.error("Erro Mercado Pago:", error);
-        return res.status(500).json({ error: "Erro ao gerar pagamento" });
+    } catch (err) {
+        console.error("Erro Mercado Pago:", err);
+        return res.status(500).json({ error: "Erro interno ao gerar pagamento" });
     }
 });
 
-// Porta Render
-app.listen(process.env.PORT || 3000, () => {
-    console.log("Servidor rodando...");
-});
+// porta do Render
+app.listen(process.env.PORT || 3000, () =>
+    console.log("Servidor rodando...")
+);
