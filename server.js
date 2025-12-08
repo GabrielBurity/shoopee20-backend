@@ -1,19 +1,22 @@
 import express from "express";
 import cors from "cors";
-import mercadopago from "mercadopago";
+import MercadoPago from "mercadopago";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// CONFIGURAR SDK CORRETAMENTE
-mercadopago.configure({
-    access_token: process.env.MP_ACCESS_TOKEN   // Certifique-se de criar no Render
+// Inicializar SDK da forma nova
+const client = new MercadoPago.MercadoPagoConfig({
+    accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// ROTA PARA TESTE
+// Import preferências com client configurado
+const preferenceClient = new MercadoPago.Preference(client);
+
+// Teste
 app.get("/", (req, res) => {
-    res.send("Backend da Shoopee20 Online!");
+    res.send("Backend da Shoopee20 Online ✓");
 });
 
 // ROTA DE PAGAMENTO
@@ -44,17 +47,21 @@ app.post("/create-preference", async (req, res) => {
             }
         };
 
-        const result = await mercadopago.preferences.create(preference);
+        const result = await preferenceClient.create({
+            body: preference
+        });
 
-        return res.json({ init_point: result.body.init_point });
+        console.log("Preferência criada!", result);
+
+        return res.json({ init_point: result.init_point });
 
     } catch (error) {
         console.error("Erro Mercado Pago:", error);
-        return res.status(500).json({ error: "Erro interno" });
+        return res.status(500).json({ error: "Erro ao gerar pagamento" });
     }
 });
 
-// PORTA DO RENDER
+// Porta Render
 app.listen(process.env.PORT || 3000, () => {
-    console.log("Servidor rodando!");
+    console.log("Servidor rodando...");
 });
