@@ -6,12 +6,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// CONFIGURAR MERCADO PAGO COM VARIÁVEL DE AMBIENTE
 mercadopago.configure({
-    access_token: "APP_USR-2769810183965214-120719-4ecd26c6c611a5e845c71de4c6fedd66-3044196386"
+    access_token: process.env.ACCESS_TOKEN
 });
 
-// ROTA PARA CRIAR UMA PREFERÊNCIA BASEADA NO CARRINHO
-app.post("/create-preference", async (req, res) => {
+// ROTA PARA CRIAR A PREFERÊNCIA DO CARRINHO
+app.post("/create_preference", async (req, res) => {
     try {
         const { items } = req.body;
 
@@ -25,16 +26,20 @@ app.post("/create-preference", async (req, res) => {
         const preference = {
             items: mpItems,
             back_urls: {
-                success: "https://SEU_SITE/sucesso",
-                pending: "https://SEU_SITE/pendente",
-                failure: "https://SEU_SITE/erro"
+                success: "https://seusite.com/sucesso",
+                pending: "https://seusite.com/pendente",
+                failure: "https://seusite.com/erro"
             },
             auto_return: "approved"
         };
 
         const result = await mercadopago.preferences.create(preference);
-        result.body.sandbox_init_point
-        result.body.init_point
+
+        // RETORNAR O ID PARA O FRONTEND
+        res.json({
+            id: result.body.id,
+            init_point: result.body.init_point
+        });
 
     } catch (error) {
         console.log(error);
@@ -46,6 +51,7 @@ app.get("/", (req, res) => {
     res.send("Backend da Shoopee20 Online!");
 });
 
-app.listen(3000, () => {
-    console.log("Servidor rodando na porta 3000");
+// PORTA AUTOMÁTICA DO RENDER
+app.listen(process.env.PORT || 3000, () => {
+    console.log("Servidor rodando");
 });
