@@ -6,44 +6,41 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// CONFIGURAR MERCADO PAGO COM VARIÁVEL DE AMBIENTE
 mercadopago.configure({
-    access_token: process.env.ACCESS_TOKEN
+    access_token: process.env.MP_ACCESS_TOKEN   // <-- coloque no Render
 });
 
-// ROTA PARA CRIAR A PREFERÊNCIA DO CARRINHO
-app.post("/create_preference", async (req, res) => {
+// ROTA PARA CRIAR PREFERÊNCIA
+app.post("/create-preference", async (req, res) => {
     try {
         const { items } = req.body;
 
         const mpItems = items.map(item => ({
             title: item.name,
-            unit_price: item.price,
-            quantity: item.qty,
+            unit_price: Number(item.price),
+            quantity: Number(item.qty),
             currency_id: "BRL"
         }));
 
         const preference = {
             items: mpItems,
+            auto_return: "approved",
             back_urls: {
                 success: "https://seusite.com/sucesso",
-                pending: "https://seusite.com/pendente",
-                failure: "https://seusite.com/erro"
-            },
-            auto_return: "approved"
+                failure: "https://seusite.com/erro",
+                pending: "https://seusite.com/pendente"
+            }
         };
 
         const result = await mercadopago.preferences.create(preference);
 
-        // RETORNAR O ID PARA O FRONTEND
-        res.json({
-            id: result.body.id,
+        return res.json({
             init_point: result.body.init_point
         });
 
     } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: "Erro ao criar pagamento" });
+        console.log("ERRO NO MERCADO PAGO:", error);
+        return res.status(500).json({ error: "Erro ao criar pagamento" });
     }
 });
 
@@ -51,7 +48,6 @@ app.get("/", (req, res) => {
     res.send("Backend da Shoopee20 Online!");
 });
 
-// PORTA AUTOMÁTICA DO RENDER
-app.listen(process.env.PORT || 3000, () => {
-    console.log("Servidor rodando");
+app.listen(3000, () => {
+    console.log("Servidor rodando na porta 3000");
 });
