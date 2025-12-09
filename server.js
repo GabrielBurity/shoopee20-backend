@@ -1,25 +1,25 @@
 import express from "express";
 import cors from "cors";
-import MercadoPago, { Payment } from "mercadopago";
+import MercadoPago from "mercadopago";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// SDK nova
+// 🔐 INICIALIZAÇÃO CORRETA DA SDK NOVA
 const client = new MercadoPago.MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN,
+    accessToken: process.env.MP_ACCESS_TOKEN
 });
 
-// Instanciar pagamento
-const payment = new Payment(client);
+// Novo client para pagamentos
+const payment = new MercadoPago.Payment(client);
 
 // Teste
 app.get("/", (req, res) => {
     res.send("Backend da Shoopee20 Online ✓");
 });
 
-// Criar PIX
+// 📌 ROTA PIX – GERA O QR CODE CORRETAMENTE
 app.post("/create-pix", async (req, res) => {
     try {
         const items = req.body.items;
@@ -31,24 +31,23 @@ app.post("/create-pix", async (req, res) => {
                 description: "Compra Shoopee20",
                 payment_method_id: "pix",
                 payer: {
-                    email: "cliente@teste.com",
-                },
-            },
+                    email: "cliente@teste.com"
+                }
+            }
         });
 
-        const data = result.response.point_of_interaction.transaction_data;
-
         return res.json({
-            qr: data.qr_code_base64,
-            code: data.qr_code,
+            qr: result.point_of_interaction.transaction_data.qr_code_base64,
+            code: result.point_of_interaction.transaction_data.qr_code
         });
 
     } catch (error) {
-        console.error("ERRO PIX:", error);
+        console.log("ERRO PIX:", error);
         return res.status(500).json({ error: "Erro ao gerar PIX" });
     }
 });
 
+// Render
 app.listen(process.env.PORT || 3000, () => {
     console.log("Servidor rodando...");
 });
